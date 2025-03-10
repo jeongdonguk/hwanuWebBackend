@@ -2,6 +2,7 @@ package com.hwanu.backend.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
@@ -29,17 +30,22 @@ public class Member extends BaseEntity{
     @Column(length = 300)
     private String profileImage;
 
-    @Column(nullable = false, length = 100)
-    private String role;
+    @Column(length = 15)
+    @Builder.Default
+    private String role = "USER";
 
-    @Column(nullable = false)
-    private String provider;
+    @Builder.Default
+    private String provider = "LOCAL";
 
     @Column(length = 50)
     private String providerId;
 
-    @Column(nullable = false)
-    private String status;
+    @Builder.Default
+    private String status = "ACTIVATE";
 
     private LocalDateTime lastLogin;
+
+    public void updateLastLogin() {
+        this.lastLogin = LocalDateTime.now();
+    }
 }
