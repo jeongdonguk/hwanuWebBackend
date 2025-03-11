@@ -39,3 +39,4 @@ out/
 
 *.properties
 build.gradle
+.DS_Store
