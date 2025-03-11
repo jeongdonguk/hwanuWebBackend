@@ -38,9 +38,10 @@ public class TokenCheckFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI(); // 현재 요청된 URL 경로 가져오기
 
-        //  예외 처리할 경로 목록 (JWT 검증을 수행하지 않는 경로)
-        List<String> excludedPaths = List.of("/api");  // "/api" 경로에 대한 필터링을 제외
-        if (excludedPaths.contains(path)) {
+        // JWT 검증을 수행하지 않는 경로 목록 (Swagger, 공용 API, 헬스 체크 등)
+        List<String> excludedPaths = List.of("/test");
+        // 특정 경로에 대해 JWT 필터 적용 제외
+        if (excludedPaths.stream().anyMatch(path::startsWith)) {
             filterChain.doFilter(request, response); // 필터를 건너뛰고 다음 필터로 진행
             return;
         }
