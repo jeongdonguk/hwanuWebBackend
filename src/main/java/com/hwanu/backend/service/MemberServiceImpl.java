@@ -1,14 +1,15 @@
 package com.hwanu.backend.service;
 
-import com.hwanu.backend.DTO.MemberDTO;
 import com.hwanu.backend.DTO.MemberLoginDTO;
 import com.hwanu.backend.DTO.MemberRegisterDTO;
 import com.hwanu.backend.domain.Member;
+import com.hwanu.backend.domain.RefreshToken;
+import com.hwanu.backend.repository.RefreshTokenRepository;
 import com.hwanu.backend.repository.MemberRepository;
-import com.hwanu.backend.util.JWTUtil;
+import com.hwanu.backend.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,8 +18,9 @@ import org.springframework.stereotype.Service;
 public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JWTUtil jwtUtil;
+    private final TokenService tokenService;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final JwtUtil jwtUtil;
 
     @Override
     public String register(MemberRegisterDTO memberRegisterDTO) {
@@ -48,6 +50,11 @@ public class MemberServiceImpl implements MemberService {
         member.updateLastLogin();
         memberRepository.save(member);
 
-        return jwtUtil.generateToken(member.getEmail(), member.getRole());
+        String accessToken = jwtUtil.generateToken(member.getEmail(), member.getRole());
+        String refreshToken = jwtUtil.generateRefreshToken(member.getEmail());
+
+        tokenService.saveRefreshToken(member.getEmail(), refreshToken);
+
+        return accessToken;
     }
 }
