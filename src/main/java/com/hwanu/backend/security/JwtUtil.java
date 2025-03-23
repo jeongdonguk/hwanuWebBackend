@@ -92,6 +92,11 @@ public class JwtUtil {
      */
     public boolean validateToken(String token) {
         try {
+            if (token == null || token.isEmpty()) {
+                log.info("Token is null : 현재 로그인되어있지 않은 사용자입니다.");
+                return false;
+            }
+
             Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()

@@ -38,6 +38,8 @@ public class TokenServiceImpl implements TokenService {
             RefreshToken newRefreshToken = RefreshToken.builder()
                     .email(email)
                     .refreshToken(refreshToken)
+                    .expiresAt(LocalDateTime.now().plusDays(14))
+                    .createdAt(LocalDateTime.now())
                     .build();
             refreshTokenRepository.save(newRefreshToken);
         }
