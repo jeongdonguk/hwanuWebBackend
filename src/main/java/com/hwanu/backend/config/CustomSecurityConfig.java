@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -56,15 +57,21 @@ public class CustomSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtUtil jwtUtil, UserDetailsService userDetailsService) throws Exception {
 //        log.info("securityFilterChain .... ");
         http
-                .cors().configurationSource(corsConfigurationSource()) // CORS 설정 추가
-                .and()
-                .csrf().disable() // CSRF 비활성화 (REST API는 필요 없음)
+                .cors(cors -> cors
+                        .configurationSource(corsConfigurationSource())
+                ) // CORS 설정 추가
+                .csrf(AbstractHttpConfigurer::disable
+                )// CSRF 비활성화 (REST API는 필요 없음)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login","/auth/**").permitAll() //  로그인 & 회원가입은 인증 없이 허용
+                        .requestMatchers("/auth/login", "/auth/**", "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()
+                ) //  로그인 & 회원가입은 인증 없이 허용
+                .sessionManagement(sm -> sm
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
                 //  JwtFilter 생성 시 UserDetailsService도 함께 전달해야 함
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -78,7 +85,7 @@ public class CustomSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000")); // 프론트엔드 주소 허용
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost")); // 프론트엔드 주소 허용
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // 허용할 HTTP 메서드
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true); // 쿠키 기반 인증 허용
