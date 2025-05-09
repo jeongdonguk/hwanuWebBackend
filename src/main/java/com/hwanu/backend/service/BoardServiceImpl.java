@@ -7,7 +7,9 @@ import com.hwanu.backend.repository.CommentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,7 +23,14 @@ public class BoardServiceImpl implements BoardService {
 
     @Override
     public Page<BoardResponseDTO> getAllBoards(Pageable pageable) {
-        return boardRepository.findAll(pageable)
+
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "boardId")
+        );
+
+        return boardRepository.findAll(sortedPageable)
                 .map(board -> {
                     Long commentCount = commentRepository.countByBoard(board);
                     return BoardResponseDTO.fromEntity(board, commentCount);

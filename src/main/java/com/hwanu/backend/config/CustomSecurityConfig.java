@@ -63,10 +63,10 @@ public class CustomSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable
                 )// CSRF 비활성화 (REST API는 필요 없음)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login", "/auth/**", "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/swagger-resources/**",
-                                "/swagger-ui.html").permitAll()
+                        .requestMatchers(
+                                "/auth/login", "/auth/**", "/swagger-ui/**",
+                                "/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui.html",
+                                "/board/public").permitAll()
                         .anyRequest().authenticated()
                 ) //  로그인 & 회원가입은 인증 없이 허용
                 .sessionManagement(sm -> sm

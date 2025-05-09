@@ -2,10 +2,12 @@ package com.hwanu.backend.controller;
 
 import com.hwanu.backend.DTO.BoardResponseDTO;
 import com.hwanu.backend.service.BoardService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,9 +25,20 @@ public class BoardController {
 
     private final BoardService boardService;
 
+    @Operation(summary = "로그인 후 게시글 목록", description = "로그인 후에 사용자가 게시글 정보들을 받을 때 사용")
     @GetMapping("/list")
     public ResponseEntity<Page<BoardResponseDTO>> getBoardList(Pageable pageable){
         Page<BoardResponseDTO> boardList = boardService.getAllBoards(pageable);
         return ResponseEntity.ok(boardList);
     }
+
+    @Operation(summary = "로그인 전 기본 게시글 목록", description = "로그인을 하지 않아도 첫페이지는 보여줌")
+    @GetMapping("/public")
+    public ResponseEntity<Page<BoardResponseDTO>> getPublicBoardList(){
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<BoardResponseDTO> boardList = boardService.getAllBoards(pageable);
+        return ResponseEntity.ok(boardList);
+    }
+
+
 }
