@@ -6,16 +6,16 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
-@Entity
+@Entity // 이 데이터가 테이블의 row임을 암시
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class Member extends BaseEntity{
+public class Member extends BaseEntity{ // 최초/수정 날짜 자동 업데이트
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id // 기본키
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // 오토인크리먼트 사용
     private long id;
 
     @Column(nullable = false, length = 100)
@@ -32,7 +32,7 @@ public class Member extends BaseEntity{
 
     @Column(length = 15)
     @Builder.Default
-    private String role = "USER";
+    private String role = "USER"; // 기본값 지정
 
     @Builder.Default
     private String provider = "LOCAL";

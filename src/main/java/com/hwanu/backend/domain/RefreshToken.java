@@ -20,14 +20,14 @@ public class RefreshToken {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Setter
+    @Setter // setter 허용 ( 토큰 갱신과 같은 변경이 필요한 경우)
     @Column(nullable = false, name = "refresh_token")
     private String refreshToken;
 
     @Column(nullable = false, name = "created_at")
     private LocalDateTime createdAt;
 
-    @Setter
+    @Setter // setter 허용 ( 토큰 발급, 만료 연장시 사용)
     @Column(nullable = false, name = "expires_at")
     private LocalDateTime expiresAt;
 

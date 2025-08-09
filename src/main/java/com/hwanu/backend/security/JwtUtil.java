@@ -21,6 +21,10 @@ public class JwtUtil {
     private final long expiration;  // 토큰 만료 시간 (밀리초 단위)
     private final long refreshExpiration;
 
+    public enum TokenRS {
+        VALID, EXPIRED, ERROR, NOT_LOGIN, LOGOUT
+    }
+
 
     public JwtUtil(@Value("${jwt.secret}") String secretKey,
                    @Value("${jwt.expiration}") long expiration,
@@ -84,34 +88,37 @@ public class JwtUtil {
 
 
     /**
-     * ✅ JWT 검증 메서드
+     * JWT 검증 메서드
      * - 토큰이 유효하면 true 반환
      * - 만료되었거나 변조된 토큰이면 false 반환
      * @param token 검증할 JWT 토큰
      * @return 유효성 결과 (true/false)
      */
-    public boolean validateToken(String token) {
+    public TokenRS validateToken(String token) {
         try {
             if (token == null || token.isEmpty()) {
                 log.info("Token is null : 현재 로그인되어있지 않은 사용자입니다.");
-                return false;
+                return TokenRS.LOGOUT;
             }
 
             Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token);
-            return true; // 유효한 토큰
+            return TokenRS.VALID; // 유효한 토큰
         } catch (ExpiredJwtException e) {
             log.error("만료된 JWT 토큰: {}", e.getMessage());
+            return TokenRS.EXPIRED;
         } catch (UnsupportedJwtException e) {
             log.error("지원되지 않는 JWT 토큰: {}", e.getMessage());
+            return TokenRS.NOT_LOGIN;
         } catch (SignatureException e) {
             log.error("JWT 서명 검증 실패: {}", e.getMessage());
+            return TokenRS.NOT_LOGIN;
         } catch (Exception e) {
             log.error("잘못된 JWT 토큰: {}", e.getMessage());
+            return TokenRS.NOT_LOGIN;
         }
-        return false; // 유효하지 않은 토큰
     }
 
 

@@ -32,7 +32,7 @@ import java.util.List;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;  // JWT 관련 유틸리티 클래스
-//    private final UserDetailsService userDetailsService; // ✅ UserDetailsService 추가
+//    private final UserDetailsService userDetailsService; //  UserDetailsService 추가
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -70,11 +70,12 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         // 3. JWT 검증
-        if (jwtUtil.validateToken(token)) {
+        JwtUtil.TokenRS tokenRS = jwtUtil.validateToken(token);
+        if (tokenRS == JwtUtil.TokenRS.VALID) {
             String email = jwtUtil.getEmailFromToken(token);
 //            log.info(" JWT 검증 성공, 사용자 이메일: " + email);
 
-            // ✅ 4. SecurityContextHolder에 UserDetails 저장
+            // 4. SecurityContextHolder에 UserDetails 저장
             UserDetails userDetails = User.withUsername(email)
                     .password("") // 비밀번호 필요 없음
                     .authorities(new SimpleGrantedAuthority("USER")) // 기본 역할 설정
@@ -87,6 +88,9 @@ public class JwtFilter extends OncePerRequestFilter {
             log.info("SecurityContextHolder에 인증 정보 저장 완료");
         } else {
             log.warn("JWT 검증 실패");
+            log.warn("JWT 검증 실패: " + tokenRS);
+            response.getWriter().write("{\"error\": \"" + tokenRS + "\"}");
+            return;
         }
 
         //  5. 필터 체인 계속 진행
