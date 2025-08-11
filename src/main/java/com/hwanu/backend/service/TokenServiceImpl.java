@@ -4,12 +4,14 @@ import com.hwanu.backend.domain.Member;
 import com.hwanu.backend.domain.RefreshToken;
 import com.hwanu.backend.repository.MemberRepository;
 import com.hwanu.backend.repository.RefreshTokenRepository;
-import com.hwanu.backend.security.JwtUtil;
+import com.hwanu.backend.security.issuer.JwtIssuer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -19,7 +21,7 @@ public class TokenServiceImpl implements TokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
     private final MemberRepository memberRepository;
-    private final JwtUtil jwtUtil;
+    private final JwtIssuer jwtUtil;
 
     // 로그인시 호출
     @Override
@@ -46,19 +48,30 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public String refreshAccessToken(String refreshToken) {
+    public Map<String, String> refreshAccessToken(String refreshToken) {
         // 받은 토큰에서 email 정보를 추출하여 db에서 가져옴
-        Optional<RefreshToken> dbRefreshToken = refreshTokenRepository.findByEmail(jwtUtil.getEmailFromToken(refreshToken));
+        Optional<RefreshToken> dbRefreshToken = refreshTokenRepository.findByRefreshToken(refreshToken);
 
-        if (dbRefreshToken.isPresent() && dbRefreshToken.get().getRefreshToken().equals(refreshToken)) {
+        if (dbRefreshToken.isPresent()) {
             String email = dbRefreshToken.get().getEmail();
             String role = memberRepository.findByEmail(email).map(Member::getRole).orElse("USER");
-            return jwtUtil.generateToken(email, role);
+            String newAccessToken = jwtUtil.generateAccessToken(email, role);
+            Map<String, String> map = new HashMap<>();
+            map.put("hwanuAccessToken", newAccessToken);
+            map.put("email", email);
+            return map;
         }
 
         throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
 
     }
+
+//    @Override
+//    public String validateAndGetEmail(String token){
+//        Optional<RefreshToken> dbRefreshToken = refreshTokenRepository.findByRefreshToken(token);
+//
+//        if (dbRefreshToken.isPresent()) {}
+//    }
 
     // 로그아웃 시 호츌
     @Override

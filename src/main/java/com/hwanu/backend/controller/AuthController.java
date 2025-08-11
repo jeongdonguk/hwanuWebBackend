@@ -2,13 +2,13 @@ package com.hwanu.backend.controller;
 
 import com.hwanu.backend.DTO.MemberLoginDTO;
 import com.hwanu.backend.DTO.MemberRegisterDTO;
-import com.hwanu.backend.repository.MemberRepository;
-import com.hwanu.backend.repository.RefreshTokenRepository;
-import com.hwanu.backend.security.JwtUtil;
+import com.hwanu.backend.DTO.TokenResponseDTO;
+import com.hwanu.backend.security.issuer.JwtIssuer;
 import com.hwanu.backend.service.MemberService;
 import com.hwanu.backend.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +18,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.SimpleTimeZone;
 
 //보너스: 실무에서 자주 쓰는 패턴
 //1) 쿠키에 JWT 넣을 때
@@ -39,7 +42,7 @@ public class AuthController {
 
     private final MemberService memberService; // 회원가입 로직 처리
     private final TokenService tokenService; // 리프레시 토큰 관련 처리
-    private final JwtUtil jwtUtil; // jwt토큰 발급 관련
+    private final JwtIssuer jwtIssuer;         // Access/Refresh "발급" 전용
 
     // 회원가입
     // 입력 : 회원가입정보 , 출력 : 회원가입 성공여부
@@ -58,14 +61,23 @@ public class AuthController {
                                        MemberLoginDTO dto,
                                    HttpServletResponse response ) { // response를 직접 제어하기 위해
 
-        String accessToken = memberService.login(dto); // 로그인이 성공할 경우 엑세스 토큰을 발급
-        ResponseCookie jwtCookie = ResponseCookie.from("hwanuAccessToken", accessToken)
-                        .httpOnly(false)
-                        .secure(true)
-                        .path("/")
-                        .maxAge(Duration.ofDays(14)).build();
-        response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
-        Map<String, String> userData = Map.of("email", dto.getEmail());
+        log.info("login 시도");
+
+        TokenResponseDTO tokenResponseDTO = memberService.login(dto); // 로그인이 성공할 경우 엑세스 토큰, 리프레시 토큰을 발급
+
+        String accessToken  = jwtIssuer.generateAccessToken(dto.getEmail(), dto.getPassword());
+        String refreshToken = jwtIssuer.generateRefreshToken(dto.getEmail());
+
+        ResponseCookie refreshCookie = ResponseCookie.from("hwanuRefreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")            // 크로스 사이트 전송 허용(프론트/백 분리 환경)
+                .path("/")    // 리프레시는 인증 관련 경로에서만 사용하도록 축소
+                .maxAge(Duration.ofDays(14)).build();
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+//        java.util.Map.of("email", email, "refreshed", true)
+        Map<String, String> userData = java.util.Map.of("email", dto.getEmail(),
+                                                        "hwanuAccessToken", accessToken);
         log.info("로그인 성공 : " + dto.toString());
         return ResponseEntity.ok(userData);
     }
@@ -78,34 +90,65 @@ public class AuthController {
         log.info("로그아웃 요청 : " + email);
         tokenService.deleteRefreshToken(email);
 
-        // 세션을 사용하지 않아서 필요업음
-//        SecurityContextHolder.clearContext();
-//        log.info("securityContextholder 초기화");
+        // ★ 쿠키 삭제는 maxAge(0) + 동일 옵션(sameSite/path)로 내려야 브라우저가 제거
+//        ResponseCookie delAccess = ResponseCookie.from("hwanuAccessToken", "")
+//                .httpOnly(true).secure(true).sameSite("None").path("/").maxAge(0).build();
+        ResponseCookie delRefresh = ResponseCookie.from("hwanuRefreshToken", "")
+                .httpOnly(true).secure(true).sameSite("None").path("/").maxAge(0).build();
 
-        // 엑세스토큰 null로 초기화
-        ResponseCookie jwtCookie = ResponseCookie.from("hwanuAccessToken", null)
-                .httpOnly(false)
-                .secure(true)
-                .path("/")
-                .maxAge(Duration.ofDays(14)).build();
-
-        // 헤더에 전달
-        response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
+//        response.addHeader(HttpHeaders.SET_COOKIE, delAccess.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, delRefresh.toString());
 
         return ResponseEntity.ok("로그아웃 성공");
     }
 
+
+    // ========================
+    // 토큰 리프레시: 새 액세스 토큰 재발급
+    // ========================
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(HttpServletRequest request, HttpServletResponse response) {
+        // 1) 쿠키에서 리프레시 토큰 추출
+//        log.info("refrsh 실행");
+        String refreshToken = null;
+        if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie c : request.getCookies()) {
+//                log.info(c.getName());
+                if ("hwanuRefreshToken".equals(c.getName())) {
+                    refreshToken = c.getValue();
+                    break;
+                }
+            }
+        }
+//        log.info("refresh token : " + refreshToken);
+        if (refreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No refresh token");
+        }
+
+        // 2) 리프레시 토큰 검증 + 이메일 조회
+        Map<String, String> newAccessTokenAndEmail = tokenService.refreshAccessToken(refreshToken);
+//        log.info("newAccessTokenAndEmail : " + newAccessTokenAndEmail);
+        // 4) 새 액세스 토큰 쿠키 갱신
+//        ResponseCookie accessCookie = ResponseCookie.from("hwanuAccessToken", newAccessTokenAndEmail.get("hwanuAccessToken"))
+//                .httpOnly(true).secure(true).sameSite("None").path("/").maxAge(java.time.Duration.ofMinutes(60)).build();
+//        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+
+        return ResponseEntity.ok(java.util.Map.of("email", newAccessTokenAndEmail.get("email"),
+                                                 "hwanuAccessToken", newAccessTokenAndEmail.get("hwanuAccessToken")));
+    }
+
+
     @GetMapping("/me")
     @Operation(summary = "로그인 중 사용자 정보", description = "로그인한 사용자의 이메일 정보")
-    public ResponseEntity<?> me(@AuthenticationPrincipal UserDetails userDetails) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (userDetails == null) {
+    public ResponseEntity<?> me(@AuthenticationPrincipal Jwt jwt) {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (jwt == null) {
             log.info("로그인 정보 없음");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 정보 없음");
         }
         Map<String, String> userData = new HashMap<>();
-        userData.put("email", userDetails.getUsername());
-        log.info("email : "+ userDetails.getUsername());
+        userData.put("email", jwt.getSubject());
+        log.info("email : "+ jwt.getSubject());
         return ResponseEntity.ok(userData);
     }
 

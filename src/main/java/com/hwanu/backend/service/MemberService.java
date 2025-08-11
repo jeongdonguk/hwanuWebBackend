@@ -3,6 +3,7 @@ package com.hwanu.backend.service;
 import com.hwanu.backend.DTO.MemberDTO;
 import com.hwanu.backend.DTO.MemberLoginDTO;
 import com.hwanu.backend.DTO.MemberRegisterDTO;
+import com.hwanu.backend.DTO.TokenResponseDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 public interface MemberService {
 
     String register(MemberRegisterDTO memberRegisterDTO);
-    String login(MemberLoginDTO memberLoginDTO);
+    TokenResponseDTO login(MemberLoginDTO memberLoginDTO);
 
 
 }

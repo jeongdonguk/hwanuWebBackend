@@ -2,15 +2,17 @@ package com.hwanu.backend.service;
 
 import com.hwanu.backend.DTO.MemberLoginDTO;
 import com.hwanu.backend.DTO.MemberRegisterDTO;
+import com.hwanu.backend.DTO.TokenResponseDTO;
 import com.hwanu.backend.domain.Member;
-import com.hwanu.backend.domain.RefreshToken;
-import com.hwanu.backend.repository.RefreshTokenRepository;
 import com.hwanu.backend.repository.MemberRepository;
-import com.hwanu.backend.security.JwtUtil;
+import com.hwanu.backend.security.issuer.JwtIssuer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +22,7 @@ public class MemberServiceImpl implements MemberService {
     private final MemberRepository memberRepository;
     private final TokenService tokenService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    private final JwtUtil jwtUtil;
+    private final JwtIssuer jwtUtil;
 
     @Override
     public String register(MemberRegisterDTO memberRegisterDTO) {
@@ -39,7 +41,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public String login(MemberLoginDTO memberLoginDTO) {
+    public TokenResponseDTO login(MemberLoginDTO memberLoginDTO) {
         Member member = memberRepository.findByEmail(memberLoginDTO.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 잘못되었습니다."));
 
@@ -50,11 +52,16 @@ public class MemberServiceImpl implements MemberService {
         member.updateLastLogin();
         memberRepository.save(member);
 
-        String accessToken = jwtUtil.generateToken(member.getEmail(), member.getRole());
+        String accessToken = jwtUtil.generateAccessToken(member.getEmail(), member.getRole());
         String refreshToken = jwtUtil.generateRefreshToken(member.getEmail());
+
+        TokenResponseDTO tokenResponseDTO = TokenResponseDTO.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
 
         tokenService.saveRefreshToken(member.getEmail(), refreshToken);
 
-        return accessToken;
+        return tokenResponseDTO;
     }
 }
