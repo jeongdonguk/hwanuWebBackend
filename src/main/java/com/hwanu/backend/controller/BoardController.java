@@ -25,6 +25,7 @@ public class BoardController {
 
     private final BoardService boardService;
 
+    // 로그인 무관으로 변경(2025.08.11)
     @Operation(summary = "로그인 후 게시글 목록", description = "로그인 후에 사용자가 게시글 정보들을 받을 때 사용")
     @GetMapping("/list")
     public ResponseEntity<Page<BoardResponseDTO>> getBoardList(Pageable pageable){

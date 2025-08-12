@@ -40,6 +40,7 @@ public class CustomSecurityConfig {
             "/auth/**", // 인증, 회원가입 등을 진행하는 api
             "/swagger-ui/**", "/v3/api-docs/**", // Swagger 문서
             "/board/public", // 공개 게시글 로그인 없이 사이트 접근한 사람용
+            "/board/list", // 글접근을 회원과 무관하게 가능하도록 수정
             "/actuator/health" // 헬스체크
     };
 
