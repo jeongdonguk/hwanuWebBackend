@@ -51,18 +51,19 @@ public class TokenServiceImpl implements TokenService {
     public Map<String, String> refreshAccessToken(String refreshToken) {
         // 받은 토큰에서 email 정보를 추출하여 db에서 가져옴
         Optional<RefreshToken> dbRefreshToken = refreshTokenRepository.findByRefreshToken(refreshToken);
+        Map<String, String> map = new HashMap<>();
 
         if (dbRefreshToken.isPresent()) {
             String email = dbRefreshToken.get().getEmail();
             String role = memberRepository.findByEmail(email).map(Member::getRole).orElse("USER");
             String newAccessToken = jwtUtil.generateAccessToken(email, role);
-            Map<String, String> map = new HashMap<>();
             map.put("hwanuAccessToken", newAccessToken);
             map.put("email", email);
-            return map;
+        } else {
+            map.put("error","유효하지 않은 Refresh Token입니다.");
         }
 
-        throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+        return map;
 
     }
 

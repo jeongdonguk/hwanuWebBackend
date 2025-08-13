@@ -127,14 +127,12 @@ public class AuthController {
 
         // 2) 리프레시 토큰 검증 + 이메일 조회
         Map<String, String> newAccessTokenAndEmail = tokenService.refreshAccessToken(refreshToken);
-//        log.info("newAccessTokenAndEmail : " + newAccessTokenAndEmail);
-        // 4) 새 액세스 토큰 쿠키 갱신
-//        ResponseCookie accessCookie = ResponseCookie.from("hwanuAccessToken", newAccessTokenAndEmail.get("hwanuAccessToken"))
-//                .httpOnly(true).secure(true).sameSite("None").path("/").maxAge(java.time.Duration.ofMinutes(60)).build();
-//        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
-        return ResponseEntity.ok(java.util.Map.of("email", newAccessTokenAndEmail.get("email"),
-                                                 "hwanuAccessToken", newAccessTokenAndEmail.get("hwanuAccessToken")));
+        if (newAccessTokenAndEmail.containsKey("error")) {
+            log.info("error : " + newAccessTokenAndEmail.get("error"));
+        }
+
+        return ResponseEntity.ok(newAccessTokenAndEmail);
     }
 
 

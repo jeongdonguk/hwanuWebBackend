@@ -1,6 +1,7 @@
 package com.hwanu.backend.controller;
 
 import com.hwanu.backend.DTO.BoardResponseDTO;
+import com.hwanu.backend.DTO.PostReadResponseDTO;
 import com.hwanu.backend.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -10,11 +11,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/board")
@@ -39,6 +39,16 @@ public class BoardController {
         Pageable pageable = PageRequest.of(0, 10);
         Page<BoardResponseDTO> boardList = boardService.getAllBoards(pageable);
         return ResponseEntity.ok(boardList);
+    }
+
+    // 글 읽기 페이지
+    @Operation(summary = "글상세 페이지", description = "게시판 글을 클릭시 볼 수 있는 상세페이지 사용 데이터")
+    @GetMapping("/postRead")
+    public ResponseEntity<PostReadResponseDTO> getPostRead(@RequestParam Long boardId){
+//        log.info("글 조회 : ");
+        log.info("글 조회 : {}",boardId);
+        PostReadResponseDTO postData = boardService.getBoardById(boardId);
+        return ResponseEntity.ok(postData);
     }
 
 
