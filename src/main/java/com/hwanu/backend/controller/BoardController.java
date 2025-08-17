@@ -1,7 +1,9 @@
 package com.hwanu.backend.controller;
 
 import com.hwanu.backend.DTO.BoardResponseDTO;
+import com.hwanu.backend.DTO.CommentResponseDTO;
 import com.hwanu.backend.DTO.PostReadResponseDTO;
+import com.hwanu.backend.domain.Comment;
 import com.hwanu.backend.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,6 +51,17 @@ public class BoardController {
         log.info("글 조회 : {}",boardId);
         PostReadResponseDTO postData = boardService.getBoardById(boardId);
         return ResponseEntity.ok(postData);
+    }
+
+    // 글 읽기 페이지의 댓글
+    @Operation(summary = "글상세 페이지 댓글정보", description = "게시판 글을 클릭시 볼 수 있는 상세페이지의 댓글 데이터")
+    @GetMapping("/postComment")
+    public ResponseEntity<List<CommentResponseDTO>> getPostComment(@RequestParam Long boardId){
+//        log.info("글 조회 : ");
+        log.info("댓글 조회 : {}",boardId);
+        List<CommentResponseDTO> commentData = boardService.getCommentByBoardId(boardId);
+//        log.info("댓글  : {}",commentData.toString());
+        return ResponseEntity.ok(commentData);
     }
 
 

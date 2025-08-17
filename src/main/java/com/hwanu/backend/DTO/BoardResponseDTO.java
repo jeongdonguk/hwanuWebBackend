@@ -17,7 +17,7 @@ public class BoardResponseDTO {
     private int viewCnt;
     private int likeCnt;
 
-    // 엔티티 모든 필드가 아닌 필요한 데이트들만 추려서 이동하기 위해 사용
+    // 댓글 수량 입력 및 필요 데이터 오브젝트화
     public static BoardResponseDTO fromEntity(Board board, Long commentCnt) {
         BoardResponseDTO dto = new BoardResponseDTO();
         dto.setBoardId(board.getBoardId());
