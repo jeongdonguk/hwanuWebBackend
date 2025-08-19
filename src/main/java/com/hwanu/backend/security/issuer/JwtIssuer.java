@@ -1,5 +1,9 @@
 package com.hwanu.backend.security.issuer;
 
+import com.hwanu.backend.domain.Member;
+import com.hwanu.backend.service.MemberService;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.JwsAlgorithms;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -34,12 +38,14 @@ public class JwtIssuer {
 
 
     //  Access 토큰 발급: sub=email, role 등 필요한 최소 클레임만
-    public String generateAccessToken(String email, String role) {
+    public String generateAccessToken(Member member) {
+
         Instant now = Instant.now();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .subject(email)
-                .claim("role", role)
+                .subject(member.getEmail())
+                .claim("nickname", member.getNickname())
+                .claim("role", member.getRole())
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(expiration))
                 .build();

@@ -3,6 +3,7 @@ package com.hwanu.backend.service;
 import com.hwanu.backend.DTO.BoardResponseDTO;
 import com.hwanu.backend.DTO.CommentResponseDTO;
 import com.hwanu.backend.DTO.PostReadResponseDTO;
+import com.hwanu.backend.DTO.PostWriteDTO;
 import com.hwanu.backend.domain.Board;
 import com.hwanu.backend.domain.Comment;
 import com.hwanu.backend.repository.BoardRepository;
@@ -75,5 +76,11 @@ public class BoardServiceImpl implements BoardService {
         List<CommentResponseDTO> commentResponseDTOS = new ArrayList<>(commentMap.values());
 
         return commentResponseDTOS;
+    }
+
+    @Override
+    public void insertBoard(PostWriteDTO postWriteDTO) {
+        Board board = modelMapper.map(postWriteDTO, Board.class);
+        boardRepository.save(board);
     }
 }

@@ -1,5 +1,6 @@
 package com.hwanu.backend.service;
 
+import com.hwanu.backend.DTO.MemberDTO;
 import com.hwanu.backend.DTO.MemberLoginDTO;
 import com.hwanu.backend.DTO.MemberRegisterDTO;
 import com.hwanu.backend.DTO.TokenResponseDTO;
@@ -8,6 +9,7 @@ import com.hwanu.backend.repository.MemberRepository;
 import com.hwanu.backend.security.issuer.JwtIssuer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -52,7 +54,7 @@ public class MemberServiceImpl implements MemberService {
         member.updateLastLogin();
         memberRepository.save(member);
 
-        String accessToken = jwtUtil.generateAccessToken(member.getEmail(), member.getRole());
+        String accessToken = jwtUtil.generateAccessToken(member);
         String refreshToken = jwtUtil.generateRefreshToken(member.getEmail());
 
         TokenResponseDTO tokenResponseDTO = TokenResponseDTO.builder()
@@ -64,4 +66,5 @@ public class MemberServiceImpl implements MemberService {
 
         return tokenResponseDTO;
     }
+
 }

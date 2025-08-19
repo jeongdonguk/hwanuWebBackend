@@ -3,6 +3,7 @@ package com.hwanu.backend.controller;
 import com.hwanu.backend.DTO.MemberLoginDTO;
 import com.hwanu.backend.DTO.MemberRegisterDTO;
 import com.hwanu.backend.DTO.TokenResponseDTO;
+import com.hwanu.backend.domain.Member;
 import com.hwanu.backend.security.issuer.JwtIssuer;
 import com.hwanu.backend.service.MemberService;
 import com.hwanu.backend.service.TokenService;
@@ -19,6 +20,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -41,8 +43,8 @@ import java.util.SimpleTimeZone;
 public class AuthController {
 
     private final MemberService memberService; // 회원가입 로직 처리
-    private final TokenService tokenService; // 리프레시 토큰 관련 처리
-    private final JwtIssuer jwtIssuer;         // Access/Refresh "발급" 전용
+    private final TokenService tokenService;
+    private final JwtDecoder jwtDecoder;
 
     // 회원가입
     // 입력 : 회원가입정보 , 출력 : 회원가입 성공여부
@@ -65,8 +67,9 @@ public class AuthController {
 
         TokenResponseDTO tokenResponseDTO = memberService.login(dto); // 로그인이 성공할 경우 엑세스 토큰, 리프레시 토큰을 발급
 
-        String accessToken  = jwtIssuer.generateAccessToken(dto.getEmail(), dto.getPassword());
-        String refreshToken = jwtIssuer.generateRefreshToken(dto.getEmail());
+        String accessToken  = tokenResponseDTO.getAccessToken();
+        String refreshToken = tokenResponseDTO.getRefreshToken();
+        Jwt jwt = jwtDecoder.decode(accessToken);
 
         ResponseCookie refreshCookie = ResponseCookie.from("hwanuRefreshToken", refreshToken)
                 .httpOnly(true)
@@ -76,7 +79,9 @@ public class AuthController {
                 .maxAge(Duration.ofDays(14)).build();
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 //        java.util.Map.of("email", email, "refreshed", true)
-        Map<String, String> userData = java.util.Map.of("email", dto.getEmail(),
+        Map<String, String> userData = java.util.Map.of("email", jwt.getSubject(),
+                                                        "nickname", jwt.getClaim("nickname"),
+                                                        "role", jwt.getClaim("role") ,
                                                         "hwanuAccessToken", accessToken);
         log.info("로그인 성공 : " + dto.toString());
         return ResponseEntity.ok(userData);
@@ -146,6 +151,8 @@ public class AuthController {
         }
         Map<String, String> userData = new HashMap<>();
         userData.put("email", jwt.getSubject());
+        userData.put("nickname", jwt.getClaim("nickname"));
+        userData.put("role", jwt.getClaim("role"));
         log.info("email : "+ jwt.getSubject());
         return ResponseEntity.ok(userData);
     }

@@ -7,6 +7,9 @@ import com.hwanu.backend.repository.RefreshTokenRepository;
 import com.hwanu.backend.security.issuer.JwtIssuer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,6 +25,7 @@ public class TokenServiceImpl implements TokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final MemberRepository memberRepository;
     private final JwtIssuer jwtUtil;
+    private final JwtDecoder jwtDecoder;
 
     // 로그인시 호출
     @Override
@@ -55,10 +59,13 @@ public class TokenServiceImpl implements TokenService {
 
         if (dbRefreshToken.isPresent()) {
             String email = dbRefreshToken.get().getEmail();
-            String role = memberRepository.findByEmail(email).map(Member::getRole).orElse("USER");
-            String newAccessToken = jwtUtil.generateAccessToken(email, role);
+            Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("해당 이메일의 사용자를 찾을 수 없습니다: " + email));
+            String newAccessToken = jwtUtil.generateAccessToken(member);
+            Jwt jwt = jwtDecoder.decode(newAccessToken);
             map.put("hwanuAccessToken", newAccessToken);
             map.put("email", email);
+            map.put("nickname", jwt.getClaim("nickname"));
+            map.put("role", jwt.getClaim("role"));
         } else {
             map.put("error","유효하지 않은 Refresh Token입니다.");
         }
@@ -79,4 +86,12 @@ public class TokenServiceImpl implements TokenService {
     public void deleteRefreshToken(String email) {
         refreshTokenRepository.deleteByEmail(email);
     }
+
+//    @Override
+//    public String getAccessToken(String email) {
+//        // 회원정보 DB에서 가져오기
+//        Member member = memberService.getMemberByEmail(email);
+//        String accessToken = jwtUtil.generateAccessToken(member);
+//        return accessToken;
+//    }
 }

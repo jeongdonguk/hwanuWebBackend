@@ -3,10 +3,12 @@ package com.hwanu.backend.controller;
 import com.hwanu.backend.DTO.BoardResponseDTO;
 import com.hwanu.backend.DTO.CommentResponseDTO;
 import com.hwanu.backend.DTO.PostReadResponseDTO;
+import com.hwanu.backend.DTO.PostWriteDTO;
 import com.hwanu.backend.domain.Comment;
 import com.hwanu.backend.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
@@ -41,6 +43,15 @@ public class BoardController {
         Pageable pageable = PageRequest.of(0, 10);
         Page<BoardResponseDTO> boardList = boardService.getAllBoards(pageable);
         return ResponseEntity.ok(boardList);
+    }
+
+
+    @Operation(summary = "글쓰기", description = "글작성 요청")
+    @PostMapping("/writePost")
+    public ResponseEntity<?> writePost(@Valid @RequestBody PostWriteDTO postWriteDTO){
+        log.info("postWriteDTO : {}", postWriteDTO);
+        boardService.insertBoard(postWriteDTO);
+        return ResponseEntity.ok("good");
     }
 
     // 글 읽기 페이지

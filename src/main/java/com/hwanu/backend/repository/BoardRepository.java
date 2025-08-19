@@ -2,6 +2,7 @@ package com.hwanu.backend.repository;
 
 import com.hwanu.backend.domain.Board;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 
 // 리포지토리 인터페이스 (Board 엔티티 전용)
