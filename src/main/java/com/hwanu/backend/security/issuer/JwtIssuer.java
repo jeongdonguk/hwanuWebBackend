@@ -44,6 +44,7 @@ public class JwtIssuer {
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject(member.getEmail())
+                .claim("memberId", member.getId())
                 .claim("nickname", member.getNickname())
                 .claim("role", member.getRole())
                 .issuedAt(now)

@@ -15,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,14 +47,6 @@ public class BoardController {
         return ResponseEntity.ok(boardList);
     }
 
-
-    @Operation(summary = "글쓰기", description = "글작성 요청")
-    @PostMapping("/writePost")
-    public ResponseEntity<?> writePost(@Valid @RequestBody PostWriteDTO postWriteDTO){
-        log.info("postWriteDTO : {}", postWriteDTO);
-        boardService.insertBoard(postWriteDTO);
-        return ResponseEntity.ok("good");
-    }
 
     // 글 읽기 페이지
     @Operation(summary = "글상세 페이지", description = "게시판 글을 클릭시 볼 수 있는 상세페이지 사용 데이터")

@@ -79,8 +79,10 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public void insertBoard(PostWriteDTO postWriteDTO) {
+    public Long insertBoard(PostWriteDTO postWriteDTO) {
         Board board = modelMapper.map(postWriteDTO, Board.class);
-        boardRepository.save(board);
+        Board saveBoard = boardRepository.save(board);
+        Long getBoardId = saveBoard.getBoardId();
+        return getBoardId;
     }
 }

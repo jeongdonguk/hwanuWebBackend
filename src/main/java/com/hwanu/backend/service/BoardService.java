@@ -18,5 +18,5 @@ public interface BoardService {
 
     List<CommentResponseDTO> getCommentByBoardId(Long boardId);
 
-    void insertBoard(PostWriteDTO postWriteDTO);
+    Long insertBoard(PostWriteDTO postWriteDTO);
 }
