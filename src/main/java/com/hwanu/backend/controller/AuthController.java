@@ -74,12 +74,13 @@ public class AuthController {
         ResponseCookie refreshCookie = ResponseCookie.from("hwanuRefreshToken", refreshToken)
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("None")            // 크로스 사이트 전송 허용(프론트/백 분리 환경)
-                .path("/")    // 리프레시는 인증 관련 경로에서만 사용하도록 축소
+                .sameSite("Lax")            // 크로스 사이트 전송 허용(프론트/백 분리 환경)
+                .path("/backendApi/auth/refresh")    // 리프레시는 인증 관련 경로에서만 사용하도록 축소
                 .maxAge(Duration.ofDays(14)).build();
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 //        java.util.Map.of("email", email, "refreshed", true)
-        Map<String, String> userData = java.util.Map.of("email", jwt.getSubject(),
+        Map<String, Object> userData = java.util.Map.of("email", jwt.getSubject(),
+                                                        "memberId", jwt.getClaim("memberId"),
                                                         "nickname", jwt.getClaim("nickname"),
                                                         "role", jwt.getClaim("role") ,
                                                         "hwanuAccessToken", accessToken);
@@ -99,7 +100,7 @@ public class AuthController {
 //        ResponseCookie delAccess = ResponseCookie.from("hwanuAccessToken", "")
 //                .httpOnly(true).secure(true).sameSite("None").path("/").maxAge(0).build();
         ResponseCookie delRefresh = ResponseCookie.from("hwanuRefreshToken", "")
-                .httpOnly(true).secure(true).sameSite("None").path("/").maxAge(0).build();
+                .httpOnly(true).secure(true).sameSite("Lax").path("/backendApi/auth/refresh").maxAge(0).build();
 
 //        response.addHeader(HttpHeaders.SET_COOKIE, delAccess.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, delRefresh.toString());
@@ -114,7 +115,7 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(HttpServletRequest request, HttpServletResponse response) {
         // 1) 쿠키에서 리프레시 토큰 추출
-//        log.info("refrsh 실행");
+        log.info("refrsh 실행");
         String refreshToken = null;
         if (request.getCookies() != null) {
             for (jakarta.servlet.http.Cookie c : request.getCookies()) {
@@ -134,6 +135,9 @@ public class AuthController {
         Map<String, String> newAccessTokenAndEmail = tokenService.refreshAccessToken(refreshToken);
 
         if (newAccessTokenAndEmail.containsKey("error")) {
+            ResponseCookie delRefresh = ResponseCookie.from("hwanuRefreshToken", "")
+                    .httpOnly(true).secure(true).sameSite("Lax").path("/backendApi/auth/refresh").maxAge(0).build();
+            response.addHeader(HttpHeaders.SET_COOKIE, delRefresh.toString());
             log.info("error : " + newAccessTokenAndEmail.get("error"));
         }
 
@@ -149,8 +153,9 @@ public class AuthController {
             log.info("로그인 정보 없음");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 정보 없음");
         }
-        Map<String, String> userData = new HashMap<>();
+        Map<String, Object> userData = new HashMap<>();
         userData.put("email", jwt.getSubject());
+        userData.put("memberId", jwt.getClaim("memberId"));
         userData.put("nickname", jwt.getClaim("nickname"));
         userData.put("role", jwt.getClaim("role"));
         log.info("email : "+ jwt.getSubject());
