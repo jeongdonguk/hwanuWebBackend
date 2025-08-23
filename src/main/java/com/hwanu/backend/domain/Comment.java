@@ -27,12 +27,12 @@ public class Comment extends BaseEntity {
     // @ManyToOne : 댓글 N개가 하나의 게시글에 속함(다대일 관계)
     //   ===> 없어도 되긴하는데 cascade나 이런류의 기능을 위해, 관계표시용으로도 좋고
     // fetch = FetchType.LAZY => Board정보는 실제로 필요할때만 조회(지연로딩)
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "board_id")
     private Board board;
 
-    @Column(name = "board_id", insertable = false ,updatable = false)
-    private Long boardIdRef;
+//    @Column(name = "board_id", insertable = false ,updatable = false)
+//    private Long boardIdRef;
 
     @Column
     private Long parentId; // 대댓글일 경우 부모 댓글 ID (null 가능)

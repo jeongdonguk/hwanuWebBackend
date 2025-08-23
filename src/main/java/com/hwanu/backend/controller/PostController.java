@@ -1,5 +1,6 @@
 package com.hwanu.backend.controller;
 
+import com.hwanu.backend.DTO.CommentWriteDTO;
 import com.hwanu.backend.DTO.PostWriteDTO;
 import com.hwanu.backend.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,6 +40,20 @@ public class PostController {
         Long newBoardId = boardService.insertBoard(postWriteDTO);
         Map<String, Long> result = new HashMap<>();
         result.put("boardId", newBoardId);
+        return ResponseEntity.ok(result);
+    }
+
+    @Operation(summary = "댓글 쓰기", description = "댓글 작성 요청")
+    @PostMapping("/writeComment")
+    public ResponseEntity<?> writeComment(@Valid @RequestBody CommentWriteDTO commentWriteDTO,
+                                       @AuthenticationPrincipal Jwt jwt){
+        log.info("postWriteDTO : {}", commentWriteDTO);
+        commentWriteDTO.setEmail(jwt.getSubject());
+        commentWriteDTO.setNickname(jwt.getClaimAsString("nickname"));
+        commentWriteDTO.setMemberId(jwt.getClaim("memberId"));
+        Long commentId = boardService.insertComment(commentWriteDTO);
+        Map<String, Long> result = new HashMap<>();
+        result.put("commentId", commentId);
         return ResponseEntity.ok(result);
     }
 }

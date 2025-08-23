@@ -1,14 +1,13 @@
 package com.hwanu.backend.service;
 
-import com.hwanu.backend.DTO.BoardResponseDTO;
-import com.hwanu.backend.DTO.CommentResponseDTO;
-import com.hwanu.backend.DTO.PostReadResponseDTO;
-import com.hwanu.backend.DTO.PostWriteDTO;
+import com.hwanu.backend.DTO.*;
 import com.hwanu.backend.domain.Board;
 import com.hwanu.backend.domain.Comment;
 import com.hwanu.backend.repository.BoardRepository;
 import com.hwanu.backend.repository.CommentRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
@@ -28,6 +27,8 @@ public class BoardServiceImpl implements BoardService {
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
     private final ModelMapper modelMapper;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public Page<BoardResponseDTO> getAllBoards(Pageable pageable) {
@@ -58,7 +59,7 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public List<CommentResponseDTO> getCommentByBoardId(Long boardId) {
 
-        List<Comment> rows = commentRepository.findByBoardIdRef(boardId, Sort.by(Sort.Direction.ASC, "commentId"));
+        List<Comment> rows = commentRepository.findByBoard_BoardId(boardId, Sort.by(Sort.Direction.ASC, "commentId"));
 //        log.info("조회된 데이터 : {}",rows);
         // 자식은 부모가 삭제되면 안보여줄것이기에 부모 후보들을 담기 위한 집함
         Map<Long, CommentResponseDTO> commentMap = new LinkedHashMap<>();
@@ -84,5 +85,16 @@ public class BoardServiceImpl implements BoardService {
         Board saveBoard = boardRepository.save(board);
         Long getBoardId = saveBoard.getBoardId();
         return getBoardId;
+    }
+
+    @Override
+    public Long insertComment(CommentWriteDTO commentWriteDTO) {
+        Comment comment = modelMapper.map(commentWriteDTO, Comment.class);
+        Board board = entityManager.getReference(Board.class, commentWriteDTO.getBoardId());
+        comment.setBoard(board);
+        Comment saveComment = commentRepository.save(comment);
+        Long getCommentId = saveComment.getCommentId();
+        return getCommentId;
+
     }
 }

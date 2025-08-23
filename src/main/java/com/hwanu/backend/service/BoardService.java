@@ -1,9 +1,6 @@
 package com.hwanu.backend.service;
 
-import com.hwanu.backend.DTO.BoardResponseDTO;
-import com.hwanu.backend.DTO.CommentResponseDTO;
-import com.hwanu.backend.DTO.PostReadResponseDTO;
-import com.hwanu.backend.DTO.PostWriteDTO;
+import com.hwanu.backend.DTO.*;
 import com.hwanu.backend.domain.Board;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,4 +16,6 @@ public interface BoardService {
     List<CommentResponseDTO> getCommentByBoardId(Long boardId);
 
     Long insertBoard(PostWriteDTO postWriteDTO);
+
+    Long insertComment(CommentWriteDTO commentWriteDTO);
 }
